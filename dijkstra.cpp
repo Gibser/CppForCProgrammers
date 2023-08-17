@@ -1,5 +1,6 @@
 #include <iostream>
 #include <vector>
+#include <unordered_map>
 #include <cstdlib> 
 #include <ctime>
 #include <queue>
@@ -31,10 +32,16 @@ class MinHeap{
         pair<int, float> get_min() { return heap_array[0]; }
         void print_heap();
         bool empty();
+        int get_node_heaparray_index(int node);
     private:
         vector<pair<int, float>> heap_array;
+        unordered_map<int, int> node_heapindex_map;
         //int heap_size;
 };
+
+int MinHeap::get_node_heaparray_index(int node){
+    return node_heapindex_map[node];
+}
 
 bool MinHeap::empty(){
     return heap_array.size() == 0;
@@ -42,15 +49,18 @@ bool MinHeap::empty(){
 
 void MinHeap::print_heap()
 {
-    for (auto i = heap_array.cbegin(); i != heap_array.cend(); ++i)
+    for(auto i = heap_array.cbegin(); i != heap_array.cend(); ++i)
         cout << "(" << (*i).first << ", " << (*i).second << ")";
     cout << "\n";
 }
 
 void MinHeap::insert_key(int key, float value){
-    int i = heap_array.size() - 1;      // Si inserisce alla fine
+    int i = heap_array.size();      // Si inserisce alla fine
     heap_array.push_back(pair<int, float>(key, value));
+    node_heapindex_map[key] = i;
     while(i != 0 && heap_array[parent(i)].second > heap_array[i].second){
+        node_heapindex_map[key] = parent(i);
+        node_heapindex_map[heap_array[parent(i)].first] = i;
         swap(&heap_array[parent(i)], &heap_array[i]);
         i = parent(i);
     }
@@ -59,6 +69,8 @@ void MinHeap::insert_key(int key, float value){
 void MinHeap::decrease_key(int i, float new_key){
     heap_array[i].second = new_key;
     while(i != 0 && heap_array[parent(i)].second > heap_array[i].second){
+        node_heapindex_map[heap_array[i].first] = parent(i);
+        node_heapindex_map[heap_array[parent(i)].first] = i;
         swap(&heap_array[parent(i)], &heap_array[i]);
         i = parent(i);
     }
@@ -73,6 +85,8 @@ void MinHeap::heapify(int i){
     if(r < heap_array.size() && heap_array[r].second < heap_array[smallest].second)
         smallest = r;
     if(smallest != i){
+        node_heapindex_map[heap_array[i].first] = parent(i);
+        node_heapindex_map[heap_array[smallest].first] = i;
         swap(&heap_array[i], &heap_array[smallest]);
         heapify(smallest);
     }    
@@ -233,21 +247,22 @@ string ShortestPath::path(int source, int dest){
     for(int i = 0; i < g->n_nodes(); i++){  // We put every vertex in Q
         queue.insert_key(i, dist[source][i]);
     }
-    
+    //cout << queue.get_node_heaparray_index(2) << endl;
     while(!queue.empty()){
         int u = queue.extract_min().first;
-        cout << "Estratto: " << u << endl;
         in_queue[u] = false;
+        //cout << "Estratto: " << u << endl;
         for(auto& v : g->neighbors(u)){
-            cout << "Adiacente: " << v << endl;
+            //cout << "Adiacente: " << v << endl;
             if(in_queue[v]){
-                cout << "Non in closed set" << endl;
+                //cout << "Non in closed set" << endl;
                 float alt = dist[source][u] + g->get_edge_value(u, v);
                 if(alt < dist[source][v]){
                     dist[source][v] = alt;
                     prev[source][v] = u;
-                    queue.decrease_key(v, alt);
-                    queue.print_heap();
+                    //queue.print_heap();
+                    queue.decrease_key(queue.get_node_heaparray_index(v), alt);
+                    //queue.print_heap();
                 }
             }
         }
@@ -305,7 +320,7 @@ int main(){
     g.set_edge_value(3, 4, 6);
     
     dijkstra.print_graph();
-    cout << dijkstra.path(0, 4) << endl;
-    cout << dijkstra.get_dist(0, 4);
+    cout << dijkstra.path(0, 1) << endl;
+    //cout << dijkstra.get_dist(1, 4);
     return 0;
 }
