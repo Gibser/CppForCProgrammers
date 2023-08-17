@@ -118,7 +118,7 @@ class Graph{
         //vector<string> node_names;
     public:
         Graph();
-        inline Graph(int n_nodes);
+        Graph(int n_nodes);
         int n_nodes();
         int n_edges();
         bool adjacent(int i, int j);
@@ -207,21 +207,22 @@ class ShortestPath{
         vector<vector<float>> dist;
         vector<vector<int>> prev;
     public:
-        ShortestPath();
+        ShortestPath(float density, int n_nodes);
         ShortestPath(Graph *g);
         string path(int u, int w);
         int path_size(int u, int w);
         float get_dist(int u, int w);
         void print_graph();
+        string create_path_string(int source, int dest);
 };
 
 void ShortestPath::print_graph(){
     g->print_adjacency_matrix();
 }
 
-ShortestPath::ShortestPath(){
-    *g = Graph();
-    g->randomize_graph(0.5);
+ShortestPath::ShortestPath(float density, int n_nodes){
+    g = new Graph(n_nodes);
+    g->randomize_graph(density);
     dist.assign(g->n_nodes(), vector<float>(g->n_nodes(), __FLT_MAX__));
     prev.assign(g->n_nodes(), vector<int>(g->n_nodes(), -1));
 }
@@ -236,9 +237,26 @@ float ShortestPath::get_dist(int u, int w){
     return dist[u][w];
 }
 
+string ShortestPath::create_path_string(int source, int dest){
+    int node = dest;
+    string path = "";
+    if(prev[source][dest] != -1){
+        path = to_string(dest);
+        while(node != source){
+            //cout << node << endl;
+            path = to_string(prev[source][node]) + " -> " + path;
+            node = prev[source][node];
+        }
+        path += "     Dist: " + to_string(dist[source][dest]);
+    }
+    return path;
+}
+
 string ShortestPath::path(int source, int dest){
+    string path = "";
     if(dist[source][dest] < __FLT_MAX__){
         // Path already calculated, we need to just return it
+        return create_path_string(source, dest);
     }
     MinHeap queue;   // minHeap
     vector<bool> in_queue(g->n_edges(), true);
@@ -267,19 +285,23 @@ string ShortestPath::path(int source, int dest){
             }
         }
     }
+    /*
     int node = dest;
     string path = "";
     if(prev[source][dest] != -1){
         path = to_string(dest);
         while(node != source){
-            cout << node << endl;
+            //cout << node << endl;
             path = to_string(prev[source][node]) + " -> " + path;
             node = prev[source][node];
         }
+        path += "     Dist: " + to_string(dist[source][dest]);
     }
-    return path;
-
+    */
+    return create_path_string(source, dest);
 }
+
+
 
 
 float random_number_min_max(float min, float max){
@@ -299,15 +321,9 @@ void Graph::randomize_graph(float density){
 
 int main(){
     srand((time(0)));
-    /*
-    Graph g(10);
-    g.randomize_graph(0.19);
-    g.print_adjacency_matrix();
-    for(auto& elem : g.neighbors(0)){
-        cout << elem << " ";
-    }
-    */
     
+    // Graph as input
+    /*
     Graph g;
     ShortestPath dijkstra(&g);
     
@@ -318,9 +334,19 @@ int main(){
     g.set_edge_value(1, 3, 3);
     g.set_edge_value(1, 4, 8);
     g.set_edge_value(3, 4, 6);
-    
+    */
+
+    // Random graph
+    ShortestPath dijkstra(0.3, 10);
     dijkstra.print_graph();
-    cout << dijkstra.path(0, 1) << endl;
-    //cout << dijkstra.get_dist(1, 4);
+
+    int source, dest;
+    while(1){
+        cout << "Source: ";
+        cin >> source;
+        cout << "Dest: ";
+        cin >> dest;
+        cout << dijkstra.path(source, dest) << endl;
+    }
     return 0;
 }
