@@ -26,8 +26,6 @@ void swap(pair<int, float>* a, pair<int, float>* b){
 // reference: https://www.geeksforgeeks.org/binary-heap/
 class MinHeap{
     public:
-        //inline MinHeap();
-        //inline Heap(bool max_heap, vector<int> array);
         void heapify(int);
         void insert_key(int, float);
         int parent(int i) { return (i-1)/2; }
@@ -67,7 +65,7 @@ void MinHeap::print_heap()
 }
 
 void MinHeap::insert_key(int key, float value){
-    int i = heap_array.size();      // Insert from the end
+    int i = heap_array.size();      // Append
     heap_array.push_back(pair<int, float>(key, value));
     node_heapindex_map[key] = i;
     while(i != 0 && heap_array[parent(i)].second > heap_array[i].second){
@@ -149,7 +147,6 @@ float PriorityQueue::get_elem_priority(int elem){
 class Graph{
     private:
         vector<vector<float>> adjacency_matrix;
-        //vector<string> node_names;
     public:
         Graph();
         Graph(int n_nodes);
@@ -198,7 +195,7 @@ int Graph::n_edges(){
 }
 
 bool Graph::adjacent(int i, int j){
-    return adjacency_matrix[i][j] != 0;     // Undirected, so we don't need to check the j->i edge
+    return adjacency_matrix[i][j] != 0;     // Undirected, so we don't need to check the edge j->i
 }
 
 vector<int> Graph::neighbors(int i){
@@ -233,8 +230,9 @@ float Graph::get_edge_value(int i, int j){
     return adjacency_matrix[i][j];
 }
 
-/* This class holds a graph, the distances between every pair of nodes and the matrix prev which holds, in position [i][j], the j's previous node in the minimum path starting from i
-   When we calculate the shortest path between u and w these matrixes are updated so we don't need to re-compute it next time.
+/* 
+This class holds a graph, the distances between every pair of nodes and the predecessor matrix prev, where prev[i][j] is the previous node of j in the shortest path from i to j, or -1 if no such path exists.
+When we compute the shortest path from u to w, we update these matrices to avoid redundant calculations in the future.
 */
 class ShortestPath{
     private:
@@ -324,14 +322,14 @@ int ShortestPath::finalise_path(int source, int dest){
 string ShortestPath::path(int source, int dest){
     string path = "";
     if(dist[source][dest] < __FLT_MAX__){
-        // Path already calculated, we need to just return it
+        // Path already calculated, we only have to return it
         return create_path_string(source, dest);
     }
     PriorityQueue queue;   // minHeap
     vector<bool> in_queue(g->n_edges(), true);
     
     dist[source][source] = 0;
-    for(int i = 0; i < g->n_nodes(); i++){  // We put every vertex in Q
+    for(int i = 0; i < g->n_nodes(); i++){  // We put every vertex in the queue Q
         queue.insert(i, dist[source][i]);
     }
     while(!queue.empty()){
