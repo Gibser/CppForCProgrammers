@@ -401,8 +401,13 @@ int main(){
     */
 
     // Average path for the assignment
-    ShortestPath dijkstra_20percent(0.5, 3);
-    dijkstra_20percent.print_graph();
-    cout << "Avg path length from " << 0 << ": " << dijkstra_20percent.average_path_length_from_source(0);
+    ShortestPath dijkstra_20percent(0.2, 50);
+    //dijkstra_20percent.print_graph();
+    cout << "Avg path length from " << 0 << ": " << dijkstra_20percent.average_path_length_from_source(0) << endl;
+
+    ShortestPath dijkstra_40percent(0.4, 50);
+    //dijkstra_40percent.print_graph();
+    cout << "Avg path length from " << 0 << ": " << dijkstra_40percent.average_path_length_from_source(0) << endl;
+
     return 0;
 }
