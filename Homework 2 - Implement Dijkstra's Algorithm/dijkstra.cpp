@@ -1,3 +1,11 @@
+/*
+This exercise was an awesome way to refresh my knowledge of Dijkstra’s shortest path algorithm, which I studied in the 
+“Algorithms and Data Structures” and “Operations Research” courses. It is a very important algorithm in computer science and graph theory.
+Therefore, these kinds of homework are really important because you have to do your own research about libraries, useful algorithms 
+and language-specific features, and it’s way better than little guided exercises.
+*/
+
+
 #include <iostream>
 #include <vector>
 #include <unordered_map>
@@ -149,9 +157,8 @@ class Graph{
         int n_edges();
         bool adjacent(int i, int j);
         vector<int> neighbors(int i);
-        //void add_edge(int i, int j, float weight);
+        void add_edge(int i, int j, float weight);
         void delete_edge(int i, int j);
-        //string get_node_name();
         float get_edge_value(int i, int j);
         void set_edge_value(int i, int j, float weight);
         void randomize_graph(float density);
@@ -253,12 +260,10 @@ float ShortestPath::path_size(int u, int w){
 float ShortestPath::average_path_length_from_source(int source){
     float avg = 0.0;
     int n_paths = 0;
-    //cout << g->n_nodes() << endl;
     for(int i = 0; i < g->n_nodes(); i++){
         if(i != source){
             path(source, i);
             if(path_size(source, i) != -1){
-                //cout << source << "->" << i <<endl;
                 avg += path_size(source, i);
                 n_paths++;
             }
@@ -294,10 +299,8 @@ string ShortestPath::create_path_string(int source, int dest){
     int node = dest;
     string path = "";
     if(dist[source][dest] != -1){
-        //cout << "Prev: " << prev[source][dest] << endl;
         path = to_string(dest);
         while(node != source){
-            //cout << node << endl;
             path = to_string(prev[source][node]) + " -> " + path;
             node = prev[source][node];
         }
@@ -320,7 +323,6 @@ int ShortestPath::finalise_path(int source, int dest){
 
 string ShortestPath::path(int source, int dest){
     string path = "";
-    //bool done = false;
     if(dist[source][dest] < __FLT_MAX__){
         // Path already calculated, we need to just return it
         return create_path_string(source, dest);
@@ -332,22 +334,14 @@ string ShortestPath::path(int source, int dest){
     for(int i = 0; i < g->n_nodes(); i++){  // We put every vertex in Q
         queue.insert(i, dist[source][i]);
     }
-    //cout << queue.get_node_heaparray_index(2) << endl;
     while(!queue.empty()){
         int u = queue.minPriority();
         if(u == dest)
             break;
-        //in_queue[u] = false;
-        //cout << "Estratto: " << u << endl;
         for(auto& v : g->neighbors(u)){
-            //cout << "Adiacente: " << v << endl;
             if(queue.contains(v) && dist[source][u] != -1){
-                //cout << "Non in closed set" << endl;
-                //cout << "dist[" << source << "][" << u << "] = " << dist[source][u] << endl;
                 float alt = dist[source][u] + g->get_edge_value(u, v);
-                //cout << "alt: " << alt << endl;
                 if(alt < dist[source][v]){
-                    //cout << alt << " < " << dist[source][v] << "?" << endl;
                     dist[source][v] = alt;
                     prev[source][v] = u;
                     queue.chgPriority(v, alt);
@@ -356,9 +350,6 @@ string ShortestPath::path(int source, int dest){
         }
     }
     finalise_path(source, dest);
-    // Dijkstra's algorithm assumes positive weights, so we can use -1 as a convention for the total path cost if the path doesn't exist
-    //if(dist[source][dest] == __FLT_MAX__)
-    //    dist[source][dest] = -1;
     return create_path_string(source, dest);
 }
 
@@ -373,7 +364,6 @@ void Graph::randomize_graph(float density){
     for(int i = 0; i < adjacency_matrix.size(); i++){
         for(int j = 0; j < adjacency_matrix.size(); j++){
             if(i != j && (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) < density)){
-                //adjacency_matrix[i][j] = adjacency_matrix[j][i] = random_number_min_max(MIN_WEIGHT, MAX_WEIGHT);
                 set_edge_value(i, j, random_number_min_max(MIN_WEIGHT, MAX_WEIGHT));
             }
         }
