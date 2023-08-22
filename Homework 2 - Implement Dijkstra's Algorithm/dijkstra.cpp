@@ -15,6 +15,7 @@ void swap(pair<int, float>* a, pair<int, float>* b){
     *b = tmp;
 }
 
+// reference: https://www.geeksforgeeks.org/binary-heap/
 class MinHeap{
     public:
         //inline MinHeap();
@@ -33,6 +34,9 @@ class MinHeap{
         void print_heap();
         bool empty();
         int get_node_heaparray_index(int node);
+        bool is_present(int key){ return !(node_heapindex_map.find(key) == node_heapindex_map.end()); }
+        int size(){ return heap_array.size(); }
+        float get_value(int heap_array_index){ return heap_array[heap_array_index].second; }
     private:
         vector<pair<int, float>> heap_array;
         unordered_map<int, int> node_heapindex_map;
@@ -55,7 +59,7 @@ void MinHeap::print_heap()
 }
 
 void MinHeap::insert_key(int key, float value){
-    int i = heap_array.size();      // Si inserisce alla fine
+    int i = heap_array.size();      // Insert from the end
     heap_array.push_back(pair<int, float>(key, value));
     node_heapindex_map[key] = i;
     while(i != 0 && heap_array[parent(i)].second > heap_array[i].second){
@@ -101,6 +105,7 @@ pair<int, float> MinHeap::extract_min(){
         return elem;
     }
     pair<int, float> root = heap_array[0];
+    node_heapindex_map.erase(heap_array[0].first);
     heap_array[0] = heap_array[heap_array.size() - 1];
     heap_array.erase(heap_array.end());
     heapify(0);
@@ -110,6 +115,27 @@ pair<int, float> MinHeap::extract_min(){
 void MinHeap::delete_key(int i){
     decrease_key(i, INT_MIN);
     extract_min();
+}
+
+class PriorityQueue{
+    private:
+        MinHeap queue;
+    public:
+        void chgPriority(int queue_element, float priority){ queue.decrease_key(queue.get_node_heaparray_index(queue_element), priority); }
+        int minPriority(){ return queue.extract_min().first; }
+        bool contains(int queue_element) { return queue.is_present(queue_element); }
+        void insert(int key, float value){ queue.insert_key(key, value); }
+        int top(){ return queue.get_min().first; }
+        int size(){ return queue.size(); }
+        float get_elem_priority(int elem);
+        bool empty(){ return queue.empty(); }
+};
+
+float PriorityQueue::get_elem_priority(int elem){
+    if(this->contains(elem))
+        return queue.get_value(queue.get_node_heaparray_index(elem));
+    else
+        return -1;
 }
 
 class Graph{
@@ -186,12 +212,14 @@ Graph::Graph(){
 }
 
 void Graph::print_adjacency_matrix(){
+    cout << "Adjacency matrix:" << endl;
     for(auto& row : adjacency_matrix){
         for(auto& col : row){
             cout << col << " ";
         }
         cout << endl;
     }
+    cout << endl;
 }
 
 float Graph::get_edge_value(int i, int j){
@@ -199,7 +227,7 @@ float Graph::get_edge_value(int i, int j){
 }
 
 /* This class holds a graph, the distances between every pair of nodes and the matrix prev which holds, in position [i][j], the j's previous node in the minimum path starting from i
-   When we calculate the shortest path between u and w these matrixes are updated so we don't need to re-compute it the next time.
+   When we calculate the shortest path between u and w these matrixes are updated so we don't need to re-compute it next time.
 */
 class ShortestPath{
     private:
@@ -210,11 +238,36 @@ class ShortestPath{
         ShortestPath(float density, int n_nodes);
         ShortestPath(Graph *g);
         string path(int u, int w);
-        int path_size(int u, int w);
+        float path_size(int u, int w);
         float get_dist(int u, int w);
         void print_graph();
         string create_path_string(int source, int dest);
+        float average_path_length_from_source(int source);
+        int finalise_path(int source, int dest);
 };
+
+float ShortestPath::path_size(int u, int w){
+    return dist[u][w];
+}
+
+float ShortestPath::average_path_length_from_source(int source){
+    float avg = 0.0;
+    int n_paths = 0;
+    //cout << g->n_nodes() << endl;
+    for(int i = 0; i < g->n_nodes(); i++){
+        if(i != source){
+            path(source, i);
+            if(path_size(source, i) != -1){
+                //cout << source << "->" << i <<endl;
+                avg += path_size(source, i);
+                n_paths++;
+            }
+        }
+    }
+    if(avg == 0 && n_paths == 0)
+        return 0;
+    return avg / n_paths;
+}
 
 void ShortestPath::print_graph(){
     g->print_adjacency_matrix();
@@ -240,7 +293,8 @@ float ShortestPath::get_dist(int u, int w){
 string ShortestPath::create_path_string(int source, int dest){
     int node = dest;
     string path = "";
-    if(prev[source][dest] != -1){
+    if(dist[source][dest] != -1){
+        //cout << "Prev: " << prev[source][dest] << endl;
         path = to_string(dest);
         while(node != source){
             //cout << node << endl;
@@ -252,52 +306,59 @@ string ShortestPath::create_path_string(int source, int dest){
     return path;
 }
 
+int ShortestPath::finalise_path(int source, int dest){
+    if(source == dest)
+        return dest;
+    if(prev[source][dest] == -1){
+        dist[source][dest] = -1;
+        dest = -1;   
+    }
+    else
+        prev[source][dest] = finalise_path(source, prev[source][dest]); 
+    return dest;
+}
+
 string ShortestPath::path(int source, int dest){
     string path = "";
+    //bool done = false;
     if(dist[source][dest] < __FLT_MAX__){
         // Path already calculated, we need to just return it
         return create_path_string(source, dest);
     }
-    MinHeap queue;   // minHeap
+    PriorityQueue queue;   // minHeap
     vector<bool> in_queue(g->n_edges(), true);
     
     dist[source][source] = 0;
     for(int i = 0; i < g->n_nodes(); i++){  // We put every vertex in Q
-        queue.insert_key(i, dist[source][i]);
+        queue.insert(i, dist[source][i]);
     }
     //cout << queue.get_node_heaparray_index(2) << endl;
     while(!queue.empty()){
-        int u = queue.extract_min().first;
-        in_queue[u] = false;
+        int u = queue.minPriority();
+        if(u == dest)
+            break;
+        //in_queue[u] = false;
         //cout << "Estratto: " << u << endl;
         for(auto& v : g->neighbors(u)){
             //cout << "Adiacente: " << v << endl;
-            if(in_queue[v]){
+            if(queue.contains(v) && dist[source][u] != -1){
                 //cout << "Non in closed set" << endl;
+                //cout << "dist[" << source << "][" << u << "] = " << dist[source][u] << endl;
                 float alt = dist[source][u] + g->get_edge_value(u, v);
+                //cout << "alt: " << alt << endl;
                 if(alt < dist[source][v]){
+                    //cout << alt << " < " << dist[source][v] << "?" << endl;
                     dist[source][v] = alt;
                     prev[source][v] = u;
-                    //queue.print_heap();
-                    queue.decrease_key(queue.get_node_heaparray_index(v), alt);
-                    //queue.print_heap();
+                    queue.chgPriority(v, alt);
                 }
             }
         }
     }
-    /*
-    int node = dest;
-    string path = "";
-    if(prev[source][dest] != -1){
-        path = to_string(dest);
-        while(node != source){
-            //cout << node << endl;
-            path = to_string(prev[source][node]) + " -> " + path;
-            node = prev[source][node];
-        }
-        path += "     Dist: " + to_string(dist[source][dest]);
-    }
-    */
+    finalise_path(source, dest);
+    // Dijkstra's algorithm assumes positive weights, so we can use -1 as a convention for the total path cost if the path doesn't exist
+    //if(dist[source][dest] == __FLT_MAX__)
+    //    dist[source][dest] = -1;
     return create_path_string(source, dest);
 }
 
@@ -337,7 +398,8 @@ int main(){
     */
 
     // Random graph
-    ShortestPath dijkstra(0.3, 10);
+    /*
+    ShortestPath dijkstra(0.1, 10);
     dijkstra.print_graph();
 
     int source, dest;
@@ -348,5 +410,11 @@ int main(){
         cin >> dest;
         cout << dijkstra.path(source, dest) << endl;
     }
+    */
+
+    // Average path for the assignment
+    ShortestPath dijkstra_20percent(0.5, 3);
+    dijkstra_20percent.print_graph();
+    cout << "Avg path length from " << 0 << ": " << dijkstra_20percent.average_path_length_from_source(0);
     return 0;
 }
