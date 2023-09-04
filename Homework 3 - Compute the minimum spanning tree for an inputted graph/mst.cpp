@@ -26,6 +26,12 @@ void swap(pair<int, float>* a, pair<int, float>* b){
     *b = tmp;
 }
 
+void swap(int* a, int* b){
+    int tmp = *a;
+    *a = *b;
+    *b = tmp;
+}
+
 // reference: https://www.geeksforgeeks.org/binary-heap/
 class MinHeap{
     public:
@@ -46,6 +52,7 @@ class MinHeap{
         bool is_present(int key){ return !(node_heapindex_map.find(key) == node_heapindex_map.end()); }
         int size(){ return heap_array.size(); }
         float get_value(int heap_array_index){ return heap_array[heap_array_index].second; }
+        void print_node_heapindex_map();
     private:
         vector<pair<int, float>> heap_array;
         unordered_map<int, int> node_heapindex_map;
@@ -58,6 +65,13 @@ int MinHeap::get_node_heaparray_index(int node){
 
 bool MinHeap::empty(){
     return heap_array.size() == 0;
+}
+
+void MinHeap::print_node_heapindex_map(){
+    for(auto it = node_heapindex_map.begin(); it != node_heapindex_map.end(); ++it){
+        cout << it->first << ": " << it->second << " ";
+    }
+    cout << endl;
 }
 
 void MinHeap::print_heap()
@@ -98,8 +112,9 @@ void MinHeap::heapify(int i){
     if(r < heap_array.size() && heap_array[r].second < heap_array[smallest].second)
         smallest = r;
     if(smallest != i){
-        node_heapindex_map[heap_array[i].first] = parent(i);
+        node_heapindex_map[heap_array[i].first] = smallest;
         node_heapindex_map[heap_array[smallest].first] = i;
+        //swap(&node_heapindex_map[heap_array[i].first], &node_heapindex_map[heap_array[smallest].first]);
         swap(&heap_array[i], &heap_array[smallest]);
         heapify(smallest);
     }    
@@ -116,6 +131,7 @@ pair<int, float> MinHeap::extract_min(){
     pair<int, float> root = heap_array[0];
     node_heapindex_map.erase(heap_array[0].first);
     heap_array[0] = heap_array[heap_array.size() - 1];
+    node_heapindex_map[heap_array[0].first] = 0;
     heap_array.erase(heap_array.end());
     heapify(0);
     return root;
@@ -138,7 +154,7 @@ class PriorityQueue{
         int size(){ return queue.size(); }
         float get_elem_priority(int elem);
         bool empty(){ return queue.empty(); }
-        void print_queue(){ queue.print_heap(); }
+        void print_queue(){ queue.print_heap();}
 };
 
 float PriorityQueue::get_elem_priority(int elem){
@@ -348,17 +364,12 @@ void MinimumSpanningTree::compute_mst(int root){
     int tree_n_edges = -1;
     while(!queue.empty()){
         int u = queue.minPriority();
-        cout << "Seleziono " << u << " con " << cost[u] << " da " << prev[u] << endl;
         tree_n_edges++;
         for(auto v : g->neighbors(u)){
             if(queue.contains(v) && g->get_edge_value(u, v) < cost[v]){
-                cout << "Nodo: " << v << endl;
                 cost[v] = g->get_edge_value(u, v);
                 prev[v] = u;
-                //cout << "Cambio con " << u << "->" << v << " " << g->get_edge_value(u, v);
-                
                 queue.chgPriority(v, g->get_edge_value(u, v));
-                queue.print_queue();
             }
         }
     }
@@ -412,7 +423,7 @@ MinimumSpanningTree::MinimumSpanningTree(Graph *g){
 
 int main(){
     srand((time(0)));
-    Graph g("graph.txt");
+    Graph g("graph.txt");           // Use the sample test data file from coursera
     //Graph g(6);
     //g.randomize_graph(0.3);
     //g.print_adjacency_matrix();
@@ -430,9 +441,8 @@ int main(){
     g.set_edge_value(4, 6, 9);
     g.set_edge_value(5, 6, 11);
     */
-    // TODO testare con numero di nodi incrementale
-    mst.compute_mst(3);
-    mst.print_tree(3);
-    mst.print_tree_as_adj_matrix();
+    mst.compute_mst(0);
+    mst.print_tree(0);
+    //mst.print_tree_as_adj_matrix();
     return 0;
 }

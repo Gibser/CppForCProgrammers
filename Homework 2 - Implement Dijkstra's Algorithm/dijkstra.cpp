@@ -95,7 +95,7 @@ void MinHeap::heapify(int i){
     if(r < heap_array.size() && heap_array[r].second < heap_array[smallest].second)
         smallest = r;
     if(smallest != i){
-        node_heapindex_map[heap_array[i].first] = parent(i);
+        node_heapindex_map[heap_array[i].first] = smallest;
         node_heapindex_map[heap_array[smallest].first] = i;
         swap(&heap_array[i], &heap_array[smallest]);
         heapify(smallest);
@@ -386,7 +386,7 @@ int main(){
     */
 
     // Random graph
-    /*
+    
     ShortestPath dijkstra(0.1, 10);
     dijkstra.print_graph();
 
@@ -398,8 +398,8 @@ int main(){
         cin >> dest;
         cout << dijkstra.path(source, dest) << endl;
     }
-    */
-
+    
+    /*
     // Average path for the assignment
     ShortestPath dijkstra_20percent(0.2, 50);
     //dijkstra_20percent.print_graph();
@@ -408,6 +408,6 @@ int main(){
     ShortestPath dijkstra_40percent(0.4, 50);
     //dijkstra_40percent.print_graph();
     cout << "Avg path length from " << 0 << ": " << dijkstra_40percent.average_path_length_from_source(0) << endl;
-
+    */
     return 0;
 }
