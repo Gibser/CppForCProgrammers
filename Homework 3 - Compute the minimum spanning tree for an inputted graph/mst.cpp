@@ -14,6 +14,7 @@ and language-specific features, and it’s way better than little guided exercis
 #include <queue>
 #include <list>
 #include <numeric>
+#include <fstream>
 #define MIN_WEIGHT 1
 #define MAX_WEIGHT 10
 
@@ -154,6 +155,7 @@ class Graph{
     public:
         Graph();
         Graph(int n_nodes);
+        Graph(string file_name);
         int n_nodes();
         int n_edges();
         bool adjacent(int i, int j);
@@ -164,7 +166,17 @@ class Graph{
         void set_edge_value(int i, int j, float weight);
         void randomize_graph(float density);
         void print_adjacency_matrix();
+        void init_graph_from_file(ifstream &graph_file);
+        void init_graph(int n_nodes);
 };
+
+void Graph::add_edge(int i, int j, float weight){
+    set_edge_value(i, j, weight);
+}
+
+void Graph::delete_edge(int i, int j){
+    set_edge_value(i, j, 0);
+}
 
 // Undirected
 void Graph::set_edge_value(int i, int j, float weight){
@@ -211,12 +223,55 @@ vector<int> Graph::neighbors(int i){
     return neighs;
 }
 
-Graph::Graph(int n_nodes){
+void Graph::init_graph_from_file(ifstream &graph_file){
+    int n_nodes;
+    string line;      
+    graph_file >> n_nodes;      // First line, for the number of nodes
+    init_graph(n_nodes);
+    //cout << this->n_nodes();
+    int i, j;
+    float weight;
+    while(graph_file >> i >> j >> weight){
+        if(weight <= 0.0){
+            cout << "Invalid edge, skipping...";
+            continue;
+        }
+        add_edge(i, j, weight);
+    }
+    print_adjacency_matrix();
+}
+
+Graph::Graph(string file_name){
+    ifstream graph_file;
+    graph_file.open(file_name);
+    if(graph_file.is_open())
+        init_graph_from_file(graph_file);
+    else
+        cout << "File error" << endl;
+    /*
+    graph_file.exceptions(ifstream::failbit | ifstream::badbit);
+    try {       // File opening error check
+        graph_file.open(file_name);
+        init_graph_from_file(graph_file);
+    } catch (std::system_error& e) {
+        std::cerr << e.code().message() << std::endl;
+    }
+    */
+
+}
+
+void Graph::init_graph(int n_nodes){
     adjacency_matrix.assign(n_nodes, vector<float>(n_nodes));
 }
 
+Graph::Graph(int n_nodes){
+    //adjacency_matrix.assign(n_nodes, vector<float>(n_nodes));
+    init_graph(n_nodes);
+}
+
 Graph::Graph(){
-    adjacency_matrix.assign(5, vector<float>(5));
+    //adjacency_matrix.assign(5, vector<float>(5));
+    init_graph(5);
 }
 
 void Graph::print_adjacency_matrix(){
@@ -249,7 +304,7 @@ void Graph::randomize_graph(float density){
     }
 }
 
-class MinimumSpanningTree{
+class MinimumSpanningTree{    // We use Prim's algorithm (https://en.wikipedia.org/wiki/Prim%27s_algorithm)
     private:
         Graph *g;
         vector<float> cost;
@@ -262,10 +317,11 @@ class MinimumSpanningTree{
         void init_queue(PriorityQueue &queue);
         void build_tree();
         void print_tree(int root);
+        void print_tree_as_adj_matrix();
 };
 
 void MinimumSpanningTree::init_tree(){
-    cost.assign(g->n_nodes(), MAX_WEIGHT + 1);
+    cost.assign(g->n_nodes(), __FLT_MAX__);
     prev.assign(g->n_nodes(), -1);
 }
 
@@ -292,12 +348,17 @@ void MinimumSpanningTree::compute_mst(int root){
     int tree_n_edges = -1;
     while(!queue.empty()){
         int u = queue.minPriority();
+        cout << "Seleziono " << u << " con " << cost[u] << " da " << prev[u] << endl;
         tree_n_edges++;
         for(auto v : g->neighbors(u)){
             if(queue.contains(v) && g->get_edge_value(u, v) < cost[v]){
+                cout << "Nodo: " << v << endl;
                 cost[v] = g->get_edge_value(u, v);
                 prev[v] = u;
+                //cout << "Cambio con " << u << "->" << v << " " << g->get_edge_value(u, v);
+                
                 queue.chgPriority(v, g->get_edge_value(u, v));
+                queue.print_queue();
             }
         }
     }
@@ -307,7 +368,20 @@ void MinimumSpanningTree::compute_mst(int root){
     }
 
     build_tree();
-    cout << "MST cost is " << accumulate(cost.begin(), cost.end(), 0) << endl;
+    cout << "MST cost is " << accumulate(cost.begin(), cost.end(), 0.0) << endl;
+}
+
+void MinimumSpanningTree::print_tree_as_adj_matrix(){
+    for(int i = 0; i < g->n_nodes(); ++i){
+        vector<float> row(g->n_nodes(), 0);
+        for(auto it = tree[i].begin(); it != tree[i].end(); ++it){
+            row[*it] = cost[*it];
+        }
+        for(int j = 0; j < g->n_nodes(); ++j){
+            cout << row[j] << " ";
+        }
+        cout << endl;
+    }
 }
 
 void MinimumSpanningTree::print_tree(int root){     // We pass the root so we can print it first with his children
@@ -338,9 +412,12 @@ MinimumSpanningTree::MinimumSpanningTree(Graph *g){
 
 int main(){
     srand((time(0)));
-    Graph g(7);
+    Graph g("graph.txt");
+    //Graph g(6);
+    //g.randomize_graph(0.3);
+    //g.print_adjacency_matrix();
     MinimumSpanningTree mst(&g);
-    
+    /*
     g.set_edge_value(0, 1, 7);
     g.set_edge_value(0, 3, 5);
     g.set_edge_value(1, 2, 8);
@@ -352,8 +429,10 @@ int main(){
     g.set_edge_value(4, 5, 8);
     g.set_edge_value(4, 6, 9);
     g.set_edge_value(5, 6, 11);
-
-    mst.compute_mst(0);
-    mst.print_tree(0);
+    */
+    // TODO testare con numero di nodi incrementale
+    mst.compute_mst(3);
+    mst.print_tree(3);
+    mst.print_tree_as_adj_matrix();
     return 0;
 }
