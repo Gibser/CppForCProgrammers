@@ -118,6 +118,10 @@ class Graph{
         void print_adjacency_matrix();
 };
 
+// Undirected
+void Graph::set_edge_value(int i, int j, float weight){
+    adjacency_matrix[i][j] = adjacency_matrix[j][i] = weight;
+}
 
 void init_array_with_value(vector<float> &array, float value, int n_elements){
     for(int i = 0; i < n_elements; i++){
@@ -185,12 +189,12 @@ float Graph::get_edge_value(int i, int j){
 */
 class ShortestPath{
     private:
-        Graph g;
+        Graph *g;
         vector<vector<float>> dist;
         vector<vector<int>> prev;
     public:
         ShortestPath();
-        ShortestPath(Graph g);
+        ShortestPath(Graph *g);
         string path(int u, int w);
         int path_size(int u, int w);
         float get_dist(int u, int w);
@@ -198,20 +202,20 @@ class ShortestPath{
 };
 
 void ShortestPath::print_graph(){
-    g.print_adjacency_matrix();
+    g->print_adjacency_matrix();
 }
 
 ShortestPath::ShortestPath(){
-    g = Graph();
-    g.randomize_graph(0.5);
-    dist.assign(g.n_nodes(), vector<float>(g.n_nodes(), __FLT_MAX__));
-    prev.assign(g.n_nodes(), vector<int>(g.n_nodes(), -1));
+    *g = Graph();
+    g->randomize_graph(0.5);
+    dist.assign(g->n_nodes(), vector<float>(g->n_nodes(), __FLT_MAX__));
+    prev.assign(g->n_nodes(), vector<int>(g->n_nodes(), -1));
 }
 
-ShortestPath::ShortestPath(Graph g){
+ShortestPath::ShortestPath(Graph *g){
     this->g = g;
-    dist.assign(g.n_nodes(), vector<float>(g.n_nodes(), __FLT_MAX__));
-    prev.assign(g.n_nodes(), vector<int>(g.n_nodes(), -1));
+    dist.assign(this->g->n_nodes(), vector<float>(this->g->n_nodes(), __FLT_MAX__));
+    prev.assign(this->g->n_nodes(), vector<int>(this->g->n_nodes(), -1));
 }
 
 float ShortestPath::get_dist(int u, int w){
@@ -223,23 +227,27 @@ string ShortestPath::path(int source, int dest){
         // Path already calculated, we need to just return it
     }
     MinHeap queue;   // minHeap
-    vector<bool> in_queue(g.n_edges(), true);
+    vector<bool> in_queue(g->n_edges(), true);
     
     dist[source][source] = 0;
-    for(int i = 0; i < g.n_nodes(); i++){  // We put every vertex in Q
+    for(int i = 0; i < g->n_nodes(); i++){  // We put every vertex in Q
         queue.insert_key(i, dist[source][i]);
     }
     
     while(!queue.empty()){
         int u = queue.extract_min().first;
+        cout << "Estratto: " << u << endl;
         in_queue[u] = false;
-        for(auto& v : g.neighbors(u)){
+        for(auto& v : g->neighbors(u)){
+            cout << "Adiacente: " << v << endl;
             if(in_queue[v]){
-                float alt = dist[source][u] + g.get_edge_value(u, v);
+                cout << "Non in closed set" << endl;
+                float alt = dist[source][u] + g->get_edge_value(u, v);
                 if(alt < dist[source][v]){
                     dist[source][v] = alt;
                     prev[source][v] = u;
                     queue.decrease_key(v, alt);
+                    queue.print_heap();
                 }
             }
         }
@@ -267,7 +275,8 @@ void Graph::randomize_graph(float density){
     for(int i = 0; i < adjacency_matrix.size(); i++){
         for(int j = 0; j < adjacency_matrix.size(); j++){
             if(i != j && (static_cast<float>(rand()) / static_cast<float>(RAND_MAX) < density)){
-                adjacency_matrix[i][j] = adjacency_matrix[j][i] = random_number_min_max(MIN_WEIGHT, MAX_WEIGHT);
+                //adjacency_matrix[i][j] = adjacency_matrix[j][i] = random_number_min_max(MIN_WEIGHT, MAX_WEIGHT);
+                set_edge_value(i, j, random_number_min_max(MIN_WEIGHT, MAX_WEIGHT));
             }
         }
     }
@@ -283,8 +292,20 @@ int main(){
         cout << elem << " ";
     }
     */
-    ShortestPath dijkstra;
+    
+    Graph g;
+    ShortestPath dijkstra(&g);
+    
+    g.set_edge_value(0, 2, 1);
+    g.set_edge_value(0, 3, 10);
+    g.set_edge_value(2, 3, 2);
+    g.set_edge_value(1, 2, 5);
+    g.set_edge_value(1, 3, 3);
+    g.set_edge_value(1, 4, 8);
+    g.set_edge_value(3, 4, 6);
+    
     dijkstra.print_graph();
-    cout << dijkstra.path(0, 1);
+    cout << dijkstra.path(0, 4) << endl;
+    cout << dijkstra.get_dist(0, 4);
     return 0;
 }
